@@ -1,7 +1,7 @@
 # Philiprehberger.DateRange
 
 [![CI](https://github.com/philiprehberger/dotnet-date-range/actions/workflows/ci.yml/badge.svg)](https://github.com/philiprehberger/dotnet-date-range/actions/workflows/ci.yml)
-[![NuGet](https://img.shields.io/nuget/v/Philiprehberger.DateRange)](https://www.nuget.org/packages/Philiprehberger.DateRange)
+[![NuGet](https://img.shields.io/nuget/v/Philiprehberger.DateRange.svg)](https://www.nuget.org/packages/Philiprehberger.DateRange)
 [![License](https://img.shields.io/github/license/philiprehberger/dotnet-date-range)](LICENSE)
 
 Immutable date/time range type with overlap detection, intersection, union, gap finding, and splitting.
