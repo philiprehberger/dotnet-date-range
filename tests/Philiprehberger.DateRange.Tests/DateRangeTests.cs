@@ -1,0 +1,136 @@
+using Xunit;
+
+namespace Philiprehberger.DateRange.Tests;
+
+public class DateRangeTests
+{
+    private static readonly DateTimeOffset T1 = new(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset T2 = new(2024, 1, 2, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset T3 = new(2024, 1, 3, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset T4 = new(2024, 1, 4, 0, 0, 0, TimeSpan.Zero);
+
+    [Fact]
+    public void Create_ValidRange_ReturnsDateRange()
+    {
+        var range = DateRange.Create(T1, T3);
+
+        Assert.Equal(T1, range.Start);
+        Assert.Equal(T3, range.End);
+    }
+
+    [Fact]
+    public void Create_StartAfterEnd_ThrowsArgumentException()
+    {
+        Assert.Throws<ArgumentException>(() => DateRange.Create(T3, T1));
+    }
+
+    [Fact]
+    public void Duration_ReturnsDifferenceBetweenStartAndEnd()
+    {
+        var range = DateRange.Create(T1, T3);
+
+        Assert.Equal(TimeSpan.FromDays(2), range.Duration);
+    }
+
+    [Fact]
+    public void Overlaps_OverlappingRanges_ReturnsTrue()
+    {
+        var a = DateRange.Create(T1, T3);
+        var b = DateRange.Create(T2, T4);
+
+        Assert.True(a.Overlaps(b));
+    }
+
+    [Fact]
+    public void Overlaps_NonOverlappingRanges_ReturnsFalse()
+    {
+        var a = DateRange.Create(T1, T2);
+        var b = DateRange.Create(T3, T4);
+
+        Assert.False(a.Overlaps(b));
+    }
+
+    [Fact]
+    public void Contains_PointInRange_ReturnsTrue()
+    {
+        var range = DateRange.Create(T1, T3);
+
+        Assert.True(range.Contains(T2));
+    }
+
+    [Fact]
+    public void Contains_PointAtEnd_ReturnsFalse()
+    {
+        var range = DateRange.Create(T1, T3);
+
+        Assert.False(range.Contains(T3));
+    }
+
+    [Fact]
+    public void Intersection_OverlappingRanges_ReturnsOverlap()
+    {
+        var a = DateRange.Create(T1, T3);
+        var b = DateRange.Create(T2, T4);
+
+        var intersection = a.Intersection(b);
+
+        Assert.NotNull(intersection);
+        Assert.Equal(T2, intersection.Value.Start);
+        Assert.Equal(T3, intersection.Value.End);
+    }
+
+    [Fact]
+    public void Intersection_NonOverlappingRanges_ReturnsNull()
+    {
+        var a = DateRange.Create(T1, T2);
+        var b = DateRange.Create(T3, T4);
+
+        Assert.Null(a.Intersection(b));
+    }
+
+    [Fact]
+    public void Union_OverlappingRanges_ReturnsMergedRange()
+    {
+        var a = DateRange.Create(T1, T3);
+        var b = DateRange.Create(T2, T4);
+
+        var union = a.Union(b);
+
+        Assert.Equal(T1, union.Start);
+        Assert.Equal(T4, union.End);
+    }
+
+    [Fact]
+    public void Gap_NonOverlappingRanges_ReturnsGap()
+    {
+        var a = DateRange.Create(T1, T2);
+        var b = DateRange.Create(T3, T4);
+
+        var gap = a.Gap(b);
+
+        Assert.NotNull(gap);
+        Assert.Equal(T2, gap.Value.Start);
+        Assert.Equal(T3, gap.Value.End);
+    }
+
+    [Fact]
+    public void Split_DurationSmallerThanRange_ReturnsMultipleSegments()
+    {
+        var range = DateRange.Create(T1, T3);
+
+        var segments = range.Split(TimeSpan.FromDays(1)).ToList();
+
+        Assert.Equal(2, segments.Count);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void IsAdjacent_AdjacentAndNonAdjacent_ReturnsCorrectResult(bool adjacent)
+    {
+        var a = DateRange.Create(T1, T2);
+        var b = adjacent ? DateRange.Create(T2, T3) : DateRange.Create(T3, T4);
+
+        Assert.Equal(adjacent, a.IsAdjacent(b));
+    }
+}
