@@ -133,4 +133,235 @@ public class DateRangeTests
 
         Assert.Equal(adjacent, a.IsAdjacent(b));
     }
+
+    // MergeAll tests
+
+    [Fact]
+    public void MergeAll_OverlappingRanges_ReturnsMergedSet()
+    {
+        var ranges = new[]
+        {
+            DateRange.Create(T1, T3),
+            DateRange.Create(T2, T4)
+        };
+
+        var merged = DateRange.MergeAll(ranges);
+
+        Assert.Single(merged);
+        Assert.Equal(T1, merged[0].Start);
+        Assert.Equal(T4, merged[0].End);
+    }
+
+    [Fact]
+    public void MergeAll_NonOverlappingRanges_ReturnsAll()
+    {
+        var ranges = new[]
+        {
+            DateRange.Create(T3, T4),
+            DateRange.Create(T1, T2)
+        };
+
+        var merged = DateRange.MergeAll(ranges);
+
+        Assert.Equal(2, merged.Count);
+        Assert.Equal(T1, merged[0].Start);
+        Assert.Equal(T3, merged[1].Start);
+    }
+
+    [Fact]
+    public void MergeAll_EmptyCollection_ReturnsEmpty()
+    {
+        var merged = DateRange.MergeAll(Array.Empty<DateRange>());
+
+        Assert.Empty(merged);
+    }
+
+    [Fact]
+    public void MergeAll_NullInput_ThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => DateRange.MergeAll(null!));
+    }
+
+    // BusinessDays tests
+
+    [Fact]
+    public void BusinessDays_FullWeek_ReturnsFive()
+    {
+        // Monday 2024-01-01 to Monday 2024-01-08 (full week)
+        var monday = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var nextMonday = new DateTimeOffset(2024, 1, 8, 0, 0, 0, TimeSpan.Zero);
+        var range = DateRange.Create(monday, nextMonday);
+
+        Assert.Equal(5, range.BusinessDays());
+    }
+
+    [Fact]
+    public void BusinessDays_WeekendOnly_ReturnsZero()
+    {
+        // Saturday 2024-01-06 to Monday 2024-01-08
+        var saturday = new DateTimeOffset(2024, 1, 6, 0, 0, 0, TimeSpan.Zero);
+        var monday = new DateTimeOffset(2024, 1, 8, 0, 0, 0, TimeSpan.Zero);
+        var range = DateRange.Create(saturday, monday);
+
+        Assert.Equal(0, range.BusinessDays());
+    }
+
+    [Fact]
+    public void BusinessDays_SingleWeekday_ReturnsOne()
+    {
+        // Monday 2024-01-01 to Tuesday 2024-01-02
+        var monday = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var tuesday = new DateTimeOffset(2024, 1, 2, 0, 0, 0, TimeSpan.Zero);
+        var range = DateRange.Create(monday, tuesday);
+
+        Assert.Equal(1, range.BusinessDays());
+    }
+
+    [Fact]
+    public void BusinessDays_TwoWeeks_ReturnsTen()
+    {
+        var monday = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var twoWeeksLater = new DateTimeOffset(2024, 1, 15, 0, 0, 0, TimeSpan.Zero);
+        var range = DateRange.Create(monday, twoWeeksLater);
+
+        Assert.Equal(10, range.BusinessDays());
+    }
+
+    // ExcludeWeekends tests
+
+    [Fact]
+    public void ExcludeWeekends_FullWeek_ReturnsSingleWeekdayRange()
+    {
+        // Monday to next Monday (half-open, so next Monday is excluded)
+        var monday = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var nextMonday = new DateTimeOffset(2024, 1, 8, 0, 0, 0, TimeSpan.Zero);
+        var range = DateRange.Create(monday, nextMonday);
+
+        var weekdays = range.ExcludeWeekends();
+
+        Assert.Single(weekdays);
+        Assert.Equal(monday, weekdays[0].Start);
+        Assert.Equal(new DateTimeOffset(2024, 1, 6, 0, 0, 0, TimeSpan.Zero), weekdays[0].End);
+    }
+
+    [Fact]
+    public void ExcludeWeekends_WeekendOnly_ReturnsEmpty()
+    {
+        // Saturday to Monday
+        var saturday = new DateTimeOffset(2024, 1, 6, 0, 0, 0, TimeSpan.Zero);
+        var monday = new DateTimeOffset(2024, 1, 8, 0, 0, 0, TimeSpan.Zero);
+        var range = DateRange.Create(saturday, monday);
+
+        var weekdays = range.ExcludeWeekends();
+
+        Assert.Empty(weekdays);
+    }
+
+    [Fact]
+    public void ExcludeWeekends_WeekdaysOnly_ReturnsSingleRange()
+    {
+        // Monday to Friday
+        var monday = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var friday = new DateTimeOffset(2024, 1, 5, 0, 0, 0, TimeSpan.Zero);
+        var range = DateRange.Create(monday, friday);
+
+        var weekdays = range.ExcludeWeekends();
+
+        Assert.Single(weekdays);
+        Assert.Equal(monday, weekdays[0].Start);
+        Assert.Equal(friday, weekdays[0].End);
+    }
+
+    [Fact]
+    public void ExcludeWeekends_TwoWeeks_ReturnsTwoChunks()
+    {
+        // Monday Jan 1 to Friday Jan 12 (spans two work weeks)
+        var monday = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var secondFriday = new DateTimeOffset(2024, 1, 12, 0, 0, 0, TimeSpan.Zero);
+        var range = DateRange.Create(monday, secondFriday);
+
+        var weekdays = range.ExcludeWeekends();
+
+        Assert.Equal(2, weekdays.Count);
+        // First week: Mon Jan 1 to Sat Jan 6
+        Assert.Equal(monday, weekdays[0].Start);
+        Assert.Equal(new DateTimeOffset(2024, 1, 6, 0, 0, 0, TimeSpan.Zero), weekdays[0].End);
+        // Second week: Mon Jan 8 to Fri Jan 12
+        Assert.Equal(new DateTimeOffset(2024, 1, 8, 0, 0, 0, TimeSpan.Zero), weekdays[1].Start);
+        Assert.Equal(secondFriday, weekdays[1].End);
+    }
+
+    // Duration comparison helpers tests
+
+    [Fact]
+    public void IsShorterThan_ShorterDuration_ReturnsTrue()
+    {
+        var range = DateRange.Create(T1, T2); // 1 day
+
+        Assert.True(range.IsShorterThan(TimeSpan.FromDays(2)));
+    }
+
+    [Fact]
+    public void IsShorterThan_EqualDuration_ReturnsFalse()
+    {
+        var range = DateRange.Create(T1, T2); // 1 day
+
+        Assert.False(range.IsShorterThan(TimeSpan.FromDays(1)));
+    }
+
+    [Fact]
+    public void IsShorterThan_LongerDuration_ReturnsFalse()
+    {
+        var range = DateRange.Create(T1, T3); // 2 days
+
+        Assert.False(range.IsShorterThan(TimeSpan.FromDays(1)));
+    }
+
+    [Fact]
+    public void IsLongerThan_LongerDuration_ReturnsTrue()
+    {
+        var range = DateRange.Create(T1, T3); // 2 days
+
+        Assert.True(range.IsLongerThan(TimeSpan.FromDays(1)));
+    }
+
+    [Fact]
+    public void IsLongerThan_EqualDuration_ReturnsFalse()
+    {
+        var range = DateRange.Create(T1, T2); // 1 day
+
+        Assert.False(range.IsLongerThan(TimeSpan.FromDays(1)));
+    }
+
+    [Fact]
+    public void IsLongerThan_ShorterDuration_ReturnsFalse()
+    {
+        var range = DateRange.Create(T1, T2); // 1 day
+
+        Assert.False(range.IsLongerThan(TimeSpan.FromDays(2)));
+    }
+
+    [Fact]
+    public void DurationEquals_EqualDuration_ReturnsTrue()
+    {
+        var range = DateRange.Create(T1, T2); // 1 day
+
+        Assert.True(range.DurationEquals(TimeSpan.FromDays(1)));
+    }
+
+    [Fact]
+    public void DurationEquals_DifferentDuration_ReturnsFalse()
+    {
+        var range = DateRange.Create(T1, T2); // 1 day
+
+        Assert.False(range.DurationEquals(TimeSpan.FromDays(2)));
+    }
+
+    [Fact]
+    public void DurationEquals_ZeroDuration_ReturnsFalse()
+    {
+        var range = DateRange.Create(T1, T2); // 1 day
+
+        Assert.False(range.DurationEquals(TimeSpan.Zero));
+    }
 }

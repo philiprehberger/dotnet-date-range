@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0 (2026-03-28)
+
+- Add `MergeAll(IEnumerable<DateRange>)` static method to merge overlapping ranges into minimal non-overlapping set
+- Add `BusinessDays()` method to count weekdays within a range excluding weekends
+- Add `ExcludeWeekends()` method to return weekday-only sub-ranges
+- Add duration comparison helpers: `IsShorterThan(TimeSpan)`, `IsLongerThan(TimeSpan)`, `DurationEquals(TimeSpan)`
+- Add missing GitHub issue templates, dependabot configuration, and pull request template
+- Fix README compliance: add missing badges, Support section, and correct section order
+
 ## 0.1.3 (2026-03-26)
 
 - Add Sponsor badge and fix License link format in README

@@ -2,7 +2,11 @@
 
 [![CI](https://github.com/philiprehberger/dotnet-date-range/actions/workflows/ci.yml/badge.svg)](https://github.com/philiprehberger/dotnet-date-range/actions/workflows/ci.yml)
 [![NuGet](https://img.shields.io/nuget/v/Philiprehberger.DateRange.svg)](https://www.nuget.org/packages/Philiprehberger.DateRange)
+[![GitHub release](https://img.shields.io/github/v/release/philiprehberger/dotnet-date-range)](https://github.com/philiprehberger/dotnet-date-range/releases)
+[![Last updated](https://img.shields.io/github/last-commit/philiprehberger/dotnet-date-range)](https://github.com/philiprehberger/dotnet-date-range/commits/main)
 [![License](https://img.shields.io/github/license/philiprehberger/dotnet-date-range)](LICENSE)
+[![Bug Reports](https://img.shields.io/github/issues/philiprehberger/dotnet-date-range/bug)](https://github.com/philiprehberger/dotnet-date-range/issues?q=is%3Aissue+is%3Aopen+label%3Abug)
+[![Feature Requests](https://img.shields.io/github/issues/philiprehberger/dotnet-date-range/enhancement)](https://github.com/philiprehberger/dotnet-date-range/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
 [![Sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-ec6cb9)](https://github.com/sponsors/philiprehberger)
 
 Immutable date/time range type with overlap detection, intersection, union, gap finding, and splitting.
@@ -33,6 +37,8 @@ Console.WriteLine(meeting.Duration);        // 01:00:00
 ### Overlap and Intersection
 
 ```csharp
+using Philiprehberger.DateRange;
+
 var a = new DateRange(start1, end1);
 var b = new DateRange(start2, end2);
 
@@ -46,14 +52,43 @@ if (a.Overlaps(b))
 ### Merging Ranges
 
 ```csharp
+using Philiprehberger.DateRange;
+
 var ranges = new[] { range1, range2, range3 };
-var merged = ranges.Merge(); // Combines overlapping/adjacent ranges
+var merged = DateRange.MergeAll(ranges); // Minimal non-overlapping set
 ```
 
 ### Finding Gaps
 
 ```csharp
+using Philiprehberger.DateRange;
+
 var gaps = ranges.FindGaps(); // Returns unoccupied intervals between ranges
+```
+
+### Business Days
+
+```csharp
+using Philiprehberger.DateRange;
+
+var sprint = DateRange.Create(
+    new DateTimeOffset(2026, 3, 23, 0, 0, 0, TimeSpan.Zero),
+    new DateTimeOffset(2026, 4, 6, 0, 0, 0, TimeSpan.Zero));
+
+int workdays = sprint.BusinessDays(); // Excludes weekends
+var weekdayRanges = sprint.ExcludeWeekends(); // Sub-ranges for weekdays only
+```
+
+### Duration Comparisons
+
+```csharp
+using Philiprehberger.DateRange;
+
+var range = DateRange.Create(start, end);
+
+bool isQuick = range.IsShorterThan(TimeSpan.FromHours(1));
+bool isLong = range.IsLongerThan(TimeSpan.FromDays(7));
+bool exactDay = range.DurationEquals(TimeSpan.FromDays(1));
 ```
 
 ## API
@@ -61,6 +96,8 @@ var gaps = ranges.FindGaps(); // Returns unoccupied intervals between ranges
 | Method | Description |
 |--------|-------------|
 | `DateRange(start, end)` | Create a new date range |
+| `DateRange.Create(start, end)` | Create a validated date range (throws if start >= end) |
+| `DateRange.MergeAll(ranges)` | Merge overlapping ranges into minimal non-overlapping set |
 | `Duration` | Get the duration of the range |
 | `Overlaps(DateRange)` | Check if two ranges overlap |
 | `Contains(DateTimeOffset)` | Check if a point is within the range |
@@ -68,15 +105,30 @@ var gaps = ranges.FindGaps(); // Returns unoccupied intervals between ranges
 | `Intersection(DateRange)` | Get the overlapping portion of two ranges |
 | `Union(DateRange)` | Merge two overlapping ranges into one |
 | `Gap(DateRange)` | Get the gap between two non-overlapping ranges |
+| `IsAdjacent(DateRange)` | Check if two ranges are adjacent |
+| `Split(TimeSpan)` | Split a range into segments of a given duration |
+| `BusinessDays()` | Count weekdays within the range excluding weekends |
+| `ExcludeWeekends()` | Return sub-ranges for weekday-only portions |
+| `IsShorterThan(TimeSpan)` | Check if the range duration is less than a time span |
+| `IsLongerThan(TimeSpan)` | Check if the range duration is greater than a time span |
+| `DurationEquals(TimeSpan)` | Check if the range duration equals a time span |
 | `IEnumerable<DateRange>.Merge()` | Merge all overlapping/adjacent ranges |
 | `IEnumerable<DateRange>.FindGaps()` | Find all gaps between ranges |
 | `IEnumerable<DateRange>.AnyOverlap()` | Check if any ranges overlap |
+| `IEnumerable<DateRange>.TotalDuration()` | Get total covered duration accounting for overlaps |
 
 ## Development
 
 ```bash
 dotnet build src/Philiprehberger.DateRange.csproj --configuration Release
 ```
+
+## Support
+
+If you find this package useful, consider giving it a star on GitHub — it helps motivate continued maintenance and development.
+
+[![LinkedIn](https://img.shields.io/badge/Philip%20Rehberger-LinkedIn-0A66C2?logo=linkedin)](https://www.linkedin.com/in/philiprehberger)
+[![More packages](https://img.shields.io/badge/more-open%20source%20packages-blue)](https://philiprehberger.com/open-source-packages)
 
 ## License
 
