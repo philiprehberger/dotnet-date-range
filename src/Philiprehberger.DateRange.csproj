@@ -9,7 +9,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <PackageId>Philiprehberger.DateRange</PackageId>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <Authors>Philip Rehberger</Authors>
     <Description>Immutable date/time range type with overlap detection, intersection, union, gap finding, and splitting.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
