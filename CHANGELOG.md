@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 (2026-04-27)
+
+- Add `Shift(TimeSpan delta)` to translate a range forward or backward
+- Add `IsEmpty` property and `Empty` static factory
+- Add `Subtract(DateRange other)` returning the non-overlapping portions of this range
+- Pin CI workflow to `actions/checkout@v5` per the standardized template
+
 ## 0.2.1 (2026-03-31)
 
 - Standardize README to 3-badge format with emoji Support section

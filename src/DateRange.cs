@@ -247,6 +247,55 @@ public readonly record struct DateRange(DateTimeOffset Start, DateTimeOffset End
     }
 
     /// <summary>
+    /// Gets a value indicating whether this range is empty (Start equals End).
+    /// </summary>
+    public bool IsEmpty => Start == End;
+
+    /// <summary>
+    /// Gets an empty range positioned at <see cref="DateTimeOffset.MinValue"/>.
+    /// Useful as a sentinel; <see cref="IsEmpty"/> returns <c>true</c>.
+    /// </summary>
+    public static DateRange Empty => new(DateTimeOffset.MinValue, DateTimeOffset.MinValue);
+
+    /// <summary>
+    /// Returns a new <see cref="DateRange"/> shifted by the specified duration.
+    /// Positive deltas move the range later; negative deltas move it earlier.
+    /// </summary>
+    /// <param name="delta">The amount to shift the range by.</param>
+    /// <returns>A new range with both endpoints translated by <paramref name="delta"/>.</returns>
+    public DateRange Shift(TimeSpan delta) => new(Start + delta, End + delta);
+
+    /// <summary>
+    /// Returns the portions of this range that do not overlap with <paramref name="other"/>.
+    /// The result contains zero, one, or two ranges depending on how the ranges intersect.
+    /// </summary>
+    /// <param name="other">The range to subtract from this range.</param>
+    /// <returns>A read-only list of non-overlapping sub-ranges sorted by start time.</returns>
+    public IReadOnlyList<DateRange> Subtract(DateRange other)
+    {
+        if (!Overlaps(other))
+        {
+            return new[] { this };
+        }
+
+        if (other.Start <= Start && other.End >= End)
+        {
+            return Array.Empty<DateRange>();
+        }
+
+        var result = new List<DateRange>(2);
+        if (Start < other.Start)
+        {
+            result.Add(new DateRange(Start, other.Start));
+        }
+        if (other.End < End)
+        {
+            result.Add(new DateRange(other.End, End));
+        }
+        return result;
+    }
+
+    /// <summary>
     /// Determines whether the duration of this range is shorter than the specified time span.
     /// </summary>
     /// <param name="timeSpan">The time span to compare against.</param>

@@ -74,6 +74,23 @@ int workdays = sprint.BusinessDays(); // Excludes weekends
 var weekdayRanges = sprint.ExcludeWeekends(); // Sub-ranges for weekdays only
 ```
 
+### Shifting and Subtraction
+
+```csharp
+using Philiprehberger.DateRange;
+
+var window = DateRange.Create(start, end);
+var nextWindow = window.Shift(TimeSpan.FromDays(7));     // Move forward by a week
+
+var blocked = DateRange.Create(blockStart, blockEnd);
+var available = window.Subtract(blocked);                // 0, 1, or 2 sub-ranges
+
+if (window.IsEmpty)
+{
+    // Sentinel check
+}
+```
+
 ### Duration Comparisons
 
 ```csharp
@@ -102,6 +119,10 @@ bool exactDay = range.DurationEquals(TimeSpan.FromDays(1));
 | `Gap(DateRange)` | Get the gap between two non-overlapping ranges |
 | `IsAdjacent(DateRange)` | Check if two ranges are adjacent |
 | `Split(TimeSpan)` | Split a range into segments of a given duration |
+| `Shift(TimeSpan)` | Translate the range by a positive or negative offset |
+| `Subtract(DateRange)` | Return the portions of this range outside the other range |
+| `IsEmpty` | True when Start equals End |
+| `DateRange.Empty` | A sentinel empty range at `DateTimeOffset.MinValue` |
 | `BusinessDays()` | Count weekdays within the range excluding weekends |
 | `ExcludeWeekends()` | Return sub-ranges for weekday-only portions |
 | `IsShorterThan(TimeSpan)` | Check if the range duration is less than a time span |

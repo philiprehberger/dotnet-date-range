@@ -364,4 +364,92 @@ public class DateRangeTests
 
         Assert.False(range.DurationEquals(TimeSpan.Zero));
     }
+
+    [Fact]
+    public void Shift_PositiveDelta_MovesRangeForward()
+    {
+        var range = DateRange.Create(T1, T2);
+
+        var shifted = range.Shift(TimeSpan.FromDays(1));
+
+        Assert.Equal(T2, shifted.Start);
+        Assert.Equal(T3, shifted.End);
+    }
+
+    [Fact]
+    public void Shift_NegativeDelta_MovesRangeBackward()
+    {
+        var range = DateRange.Create(T2, T3);
+
+        var shifted = range.Shift(TimeSpan.FromDays(-1));
+
+        Assert.Equal(T1, shifted.Start);
+        Assert.Equal(T2, shifted.End);
+    }
+
+    [Fact]
+    public void IsEmpty_WhenStartEqualsEnd_ReturnsTrue()
+    {
+        var empty = new DateRange(T1, T1);
+
+        Assert.True(empty.IsEmpty);
+        Assert.True(DateRange.Empty.IsEmpty);
+    }
+
+    [Fact]
+    public void IsEmpty_WhenStartBeforeEnd_ReturnsFalse()
+    {
+        var range = DateRange.Create(T1, T2);
+
+        Assert.False(range.IsEmpty);
+    }
+
+    [Fact]
+    public void Subtract_NoOverlap_ReturnsOriginalRange()
+    {
+        var a = DateRange.Create(T1, T2);
+        var b = DateRange.Create(T3, T4);
+
+        var result = a.Subtract(b);
+
+        Assert.Single(result);
+        Assert.Equal(a, result[0]);
+    }
+
+    [Fact]
+    public void Subtract_OtherFullyContainsThis_ReturnsEmpty()
+    {
+        var a = DateRange.Create(T2, T3);
+        var b = DateRange.Create(T1, T4);
+
+        var result = a.Subtract(b);
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void Subtract_PartialOverlapAtStart_ReturnsTrailingPortion()
+    {
+        var a = DateRange.Create(T1, T3);
+        var b = DateRange.Create(T1, T2);
+
+        var result = a.Subtract(b);
+
+        Assert.Single(result);
+        Assert.Equal(T2, result[0].Start);
+        Assert.Equal(T3, result[0].End);
+    }
+
+    [Fact]
+    public void Subtract_OtherFullyInside_ReturnsLeadingAndTrailing()
+    {
+        var a = DateRange.Create(T1, T4);
+        var b = DateRange.Create(T2, T3);
+
+        var result = a.Subtract(b);
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal(new DateRange(T1, T2), result[0]);
+        Assert.Equal(new DateRange(T3, T4), result[1]);
+    }
 }
